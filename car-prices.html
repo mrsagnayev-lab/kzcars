@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Прайс на автомобили — Апрель 2026</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; }
+
+header { background: #0f172a; color: #fff; padding: 2rem; }
+header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+header p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metric { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; }
+.metric-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.metric-value { font-size: 20px; font-weight: 700; color: #0f172a; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+input[type="text"] {
+  flex: 1; min-width: 180px;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 9px 13px; font-size: 14px; outline: none;
+  background: #fff; color: #0f172a;
+  transition: border-color .15s;
+}
+input[type="text"]:focus { border-color: #94a3b8; }
+input[type="text"]::placeholder { color: #cbd5e1; }
+select {
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 9px 13px; font-size: 14px;
+  background: #fff; color: #0f172a;
+  min-width: 130px; cursor: pointer; outline: none;
+  transition: border-color .15s;
+}
+select:focus { border-color: #94a3b8; }
+
+.range-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.25rem; }
+.rbtn {
+  font-size: 12px; font-weight: 500;
+  padding: 5px 15px; border-radius: 100px;
+  border: 1px solid #e2e8f0; background: #fff;
+  color: #64748b; cursor: pointer;
+  transition: all .15s;
+}
+.rbtn:hover { border-color: #cbd5e1; color: #334155; }
+.rbtn.active { background: #0f172a; border-color: #0f172a; color: #fff; }
+
+.table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: #f8fafc; }
+th {
+  padding: 11px 16px; text-align: left;
+  font-size: 11px; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+}
+td { padding: 11px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #f8fafc; }
+
+.pill {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 2px 10px; border-radius: 100px; white-space: nowrap;
+}
+.price { font-weight: 700; white-space: nowrap; }
+.no-results { text-align: center; padding: 3rem; color: #94a3b8; font-size: 14px; }
+
+@media (max-width: 560px) {
+  th:nth-child(3), td:nth-child(3) { display: none; }
+  header h1 { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Прайс на автомобили 2026</h1>
+  <p>Актуально с 15 по 30 апреля 2026 · Казахстан</p>
+</header>
+
+<main>
+  <div class="summary" id="summary"></div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Поиск по марке, модели или комплектации...">
+    <select id="brand-filter"><option value="">Все марки</option></select>
+    <select id="sort">
+      <option value="">Сортировка</option>
+      <option value="asc">Цена ↑</option>
+      <option value="desc">Цена ↓</option>
+    </select>
+  </div>
+
+  <div class="range-btns">
+    <button class="rbtn active" data-range="all">Все цены</button>
+    <button class="rbtn" data-range="11-13">11 — 13 млн ₸</button>
+    <button class="rbtn" data-range="13-15">13 — 15 млн ₸</button>
+    <button class="rbtn" data-range="15+">от 15 млн ₸</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Марка</th>
+          <th>Модель</th>
+          <th>Комплектация</th>
+          <th>Цена</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+const cars = [
+  { brand:'Geely', model:'Atlas', trim:'1.5 2WD Comfort', now:11290000 },
+  { brand:'Geely', model:'Atlas', trim:'1.5 2WD Premium', now:11890000 },
+  { brand:'Geely', model:'Atlas', trim:'2.0 4WD Premium', now:12690000 },
+  { brand:'Geely', model:'Atlas', trim:'2.0 4WD Flagship', now:13390000 },
+  { brand:'Geely', model:'Atlas', trim:'2.0 4WD Exclusive', now:14090000 },
+  { brand:'Geely', model:'Okavango', trim:'Premium', now:12990000 },
+  { brand:'Geely', model:'Okavango', trim:'Flagship', now:13790000 },
+  { brand:'Geely', model:'Monjaro', trim:'Premium', now:15690000 },
+  { brand:'Geely', model:'Monjaro', trim:'Flagship', now:16690000 },
+  { brand:'Changan', model:'CS75 Plus', trim:'Comfort 1.5T 2WD', now:11090000 },
+  { brand:'Changan', model:'CS75 Plus', trim:'Luxe 2.0T 2WD', now:12090000 },
+  { brand:'Changan', model:'CS75 Plus', trim:'Luxe 2.0T 4WD', now:12890000 },
+  { brand:'Changan', model:'CS75 Plus', trim:'Tech 2.0T 4WD', now:13490000 },
+  { brand:'Skoda', model:'Octavia FL', trim:'Essence 150 л.с. 2WD (2025)', now:14607600 },
+  { brand:'Skoda', model:'Octavia FL', trim:'Selection 150 л.с. 2WD (2025)', now:14990000 },
+  { brand:'Skoda', model:'Octavia FL', trim:'SportLine 150 л.с. 2WD (2025)', now:14990000 },
+  { brand:'Skoda', model:'Octavia FL', trim:'Selection 204 л.с. 4x4 (2025)', now:16623600 },
+  { brand:'Skoda', model:'Octavia FL', trim:'SportLine 204 л.с. 4x4 (2025)', now:16623600 },
+  { brand:'BYD', model:'Sealion 7', trim:'567KM Flagship (2025)', now:16990000 },
+  { brand:'BYD', model:'Sealion 7', trim:'AWD 542KM Flagship (2025)', now:18890000 },
+  { brand:'BYD', model:'Song Plus EV', trim:'505KM Flagship (2025)', now:12290000 },
+  { brand:'BYD', model:'Song Plus EV', trim:'602KM Flagship (2025)', now:13390000 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 2WD Classic(+) (2025)', now:12591600 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 2WD Comfort (2025)', now:13515600 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 2WD Travel (2025)', now:13912000 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 4WD Comfort (2025)', now:14019600 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 4WD Travel (2025)', now:14232000 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.0 MPI 6AT 4WD Prime (2025)', now:14964400 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.5 GDI 8AT 4WD Travel (2025)', now:15595700 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.5 GDI 8AT 4WD Prime N Line (2025)', now:16719800 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.5 GDI 8AT 4WD Prime (2025)', now:17295600 },
+  { brand:'Hyundai', model:'Tucson', trim:'2.5 GDI 8AT 4WD Luxe (2025)', now:17715600 },
+  { brand:'Kia', model:'Sportage New', trim:'2.0 MPI AT 2WD Comfort (2025)', now:11790000 },
+  { brand:'Kia', model:'Sportage New', trim:'2.0 MPI AT 2WD Luxe (2025)', now:14490000 },
+  { brand:'Kia', model:'Sportage New', trim:'2.0 MPI AT 4WD Luxe (2025)', now:14990000 },
+  { brand:'Kia', model:'Sportage New', trim:'2.0 MPI AT 4WD Style (2025)', now:16590000 },
+  { brand:'Kia', model:'Sportage New', trim:'2.5 GDI AT 4WD Style (2025)', now:17290000 },
+  { brand:'Kia', model:'Sportage New', trim:'2.5 GDI AT 4WD X-Line+ (2025)', now:18590000 },
+];
+
+const brandStyle = {
+  Geely:   { bg:'#dbeafe', color:'#1d4ed8' },
+  Changan: { bg:'#dcfce7', color:'#15803d' },
+  Skoda:   { bg:'#d1fae5', color:'#065f46' },
+  BYD:     { bg:'#fee2e2', color:'#b91c1c' },
+  Hyundai: { bg:'#e0e7ff', color:'#3730a3' },
+  Kia:     { bg:'#fef9c3', color:'#854d0e' },
+};
+
+const fmt = n => n.toLocaleString('ru-KZ') + ' ₸';
+let activeRange = 'all';
+
+// Populate brand filter
+const brands = [...new Set(cars.map(c => c.brand))];
+const sel = document.getElementById('brand-filter');
+brands.forEach(b => {
+  const o = document.createElement('option');
+  o.value = b; o.textContent = b;
+  sel.appendChild(o);
+});
+
+// Range buttons
+document.querySelectorAll('.rbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range;
+    render();
+  });
+});
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('brand-filter').addEventListener('change', render);
+document.getElementById('sort').addEventListener('change', render);
+
+function inRange(p) {
+  if (activeRange === 'all') return true;
+  if (activeRange === '11-13') return p >= 11000000 && p < 13000000;
+  if (activeRange === '13-15') return p >= 13000000 && p < 15000000;
+  if (activeRange === '15+') return p >= 15000000;
+  return true;
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const bf = document.getElementById('brand-filter').value;
+  const sort = document.getElementById('sort').value;
+
+  let data = cars.filter(c =>
+    (c.brand+' '+c.model+' '+c.trim).toLowerCase().includes(q) &&
+    (bf ? c.brand === bf : true) &&
+    inRange(c.now)
+  );
+  if (sort === 'asc') data.sort((a,b) => a.now - b.now);
+  if (sort === 'desc') data.sort((a,b) => b.now - a.now);
+
+  // Summary
+  const uBrands = [...new Set(data.map(c=>c.brand))].length;
+  const min = data.length ? Math.min(...data.map(c=>c.now)) : 0;
+  const max = data.length ? Math.max(...data.map(c=>c.now)) : 0;
+  document.getElementById('summary').innerHTML = [
+    { label:'Марок', value: uBrands },
+    { label:'Позиций', value: data.length },
+    { label:'Мин. цена', value: data.length ? (min/1000000).toFixed(2)+' млн' : '—' },
+    { label:'Макс. цена', value: data.length ? (max/1000000).toFixed(2)+' млн' : '—' },
+  ].map(m => `<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-value">${m.value}</div></div>`).join('');
+
+  // Table
+  const tb = document.getElementById('tbody');
+  if (!data.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="no-results">Ничего не найдено</td></tr>';
+    return;
+  }
+  tb.innerHTML = data.map(c => {
+    const s = brandStyle[c.brand] || { bg:'#f1f5f9', color:'#334155' };
+    return `<tr>
+      <td><span class="pill" style="background:${s.bg};color:${s.color}">${c.brand}</span></td>
+      <td>${c.model}</td>
+      <td style="color:#64748b">${c.trim}</td>
+      <td class="price">${fmt(c.now)}</td>
+    </tr>`;
+  }).join('');
+}
+
+render();
+</script>
+</body>
+</html>
